@@ -11,7 +11,7 @@ namespace CoreProxy
             // 或
             //var poxy = (targetInterface)ProxyGenerator.Create(typeof(targetInterface), typeof(SamepleProxy));
             // 或
-            var poxy = (targetInterface)ProxyGenerator.Create<targetInterface, SamepleProxy>();
+            var poxy = ProxyGenerator.Create<targetInterface, SamepleProxy>();
             poxy.Write("here is invoked by coreproxy");
         }
     }
@@ -19,7 +19,7 @@ namespace CoreProxy
 
     public class SamepleProxy : IInterceptor
     {
-        public object Intercept(object target, MethodInfo method, object[] parameters)
+        public object Intercept(MethodInfo method, object[] parameters)
         {
             Console.WriteLine(parameters[0]);
             return null;

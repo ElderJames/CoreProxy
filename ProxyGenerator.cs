@@ -6,7 +6,6 @@ namespace CoreProxy
     public class ProxyGenerator : DispatchProxy
     {
         private IInterceptor interceptor { get; set; }
-        private static object proxy { get; set; }
 
         /// <summary>
         /// 创建代理实例
@@ -43,20 +42,19 @@ namespace CoreProxy
         /// </summary>
         /// <param name="parameters">拦截器构造函数参数值</param>
         /// <returns>代理实例</returns>
-        public static object Create<TTarget, TInterceptor>(params object[] parameters) where TInterceptor : IInterceptor
+        public static TTarget Create<TTarget, TInterceptor>(params object[] parameters) where TInterceptor : IInterceptor
         {
             object proxy = GetProxy(typeof(TTarget));
             MethodInfo method = typeof(ProxyGenerator).GetMethod(nameof(CreateInstance), BindingFlags.NonPublic | BindingFlags.Instance, Type.DefaultBinder, new[] { typeof(Type), typeof(object[]) }, null);
             method.Invoke(proxy, new object[] { typeof(TInterceptor), parameters });
-            return proxy;
+            return (TTarget)proxy;
         }
 
         private static object GetProxy(Type targetType)
         {
             MethodInfo method = typeof(DispatchProxy).GetMethod(nameof(DispatchProxy.Create), new Type[] { });
             method = method.MakeGenericMethod(targetType, typeof(ProxyGenerator));
-            proxy = method.Invoke(null, null);
-            return proxy;
+            return method.Invoke(null, null);
         }
 
         private void CreateInstance(Type interceptorType, object[] parameters)
@@ -71,7 +69,7 @@ namespace CoreProxy
 
         protected override object Invoke(MethodInfo method, object[] parameters)
         {
-            return this.interceptor.Intercept(proxy, method, parameters);
+            return this.interceptor.Intercept(method, parameters);
         }
     }
 }
