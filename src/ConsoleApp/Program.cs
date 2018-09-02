@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Reflection;
+using CoreProxy;
 
-namespace CoreProxy
+namespace ConsoleApp
 {
     class Program
     {
