@@ -43,12 +43,12 @@ namespace CoreProxy
         /// </summary>
         /// <param name="parameters">拦截器构造函数参数值</param>
         /// <returns>代理实例</returns>
-        public static object Create<TTarget, TInterceptor>(params object[] parameters) where TInterceptor : IInterceptor
+        public static TTarget Create<TTarget, TInterceptor>(params object[] parameters) where TInterceptor : IInterceptor
         {
             object proxy = GetProxy(typeof(TTarget));
             MethodInfo method = typeof(ProxyGenerator).GetMethod(nameof(CreateInstance), BindingFlags.NonPublic | BindingFlags.Instance, Type.DefaultBinder, new[] { typeof(Type), typeof(object[]) }, null);
             method.Invoke(proxy, new object[] { typeof(TInterceptor), parameters });
-            return proxy;
+            return (TTarget)proxy;
         }
 
         private static object GetProxy(Type targetType)

@@ -11,7 +11,7 @@ namespace CoreProxy
             // 或
             //var poxy = (targetInterface)ProxyGenerator.Create(typeof(targetInterface), typeof(SamepleProxy));
             // 或
-            var poxy = (targetInterface)ProxyGenerator.Create<targetInterface, SamepleProxy>();
+            var poxy = ProxyGenerator.Create<targetInterface, SamepleProxy>();
             poxy.Write("here is invoked by coreproxy");
         }
     }
