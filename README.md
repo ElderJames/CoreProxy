@@ -1,5 +1,6 @@
 # CoreProxy
-Implement a simple Aop using.net Core library System.Reflection.DispatchProxy 
+
+Implement a simple Aop using `System.Reflection.DispatchProxy`
 
 ### Usage
 
@@ -9,13 +10,13 @@ Implement a simple Aop using.net Core library System.Reflection.DispatchProxy
         static void Main(string[] args)
         {
             var poxy1 = (targetInterface)ProxyGenerator.Create(typeof(targetInterface), new SamepleProxy("coreproxy1"));
-            poxy1.Write("here was invoked");
-           
+            poxy1.Write("here was invoked"); //---> "here was invoked by coreproxy1"
+
             var poxy2 = (targetInterface)ProxyGenerator.Create(typeof(targetInterface), typeof(SamepleProxy), "coreproxy2");
-            poxy2.Write("here was invoked");
-     
+            poxy2.Write("here was invoked"); //---> "here was invoked by coreproxy2"
+
             var poxy3 = ProxyGenerator.Create<targetInterface, SamepleProxy>("coreproxy3");
-            poxy3.Write("here was invoked");
+            poxy3.Write("here was invoked"); //---> "here was invoked by coreproxy3"
         }
     }
 
