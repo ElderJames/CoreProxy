@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/CoreProxy.csproj"
+                "${workspaceFolder}/src/ConsoleApp/ConsoleApp.csproj"
             ],
             "problemMatcher": "$msCompile"
         }
