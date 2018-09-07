@@ -1,34 +1,44 @@
 # CoreProxy
-Implement a simple Aop using.net Core library System.Reflection.DispatchProxy 
+
+Implement a simple Aop using `System.Reflection.DispatchProxy`
 
 ### Usage
 
 ```cs
-class Program
-{
-    static void Main(string[] args)
+    class Program
     {
-        // var poxy = (targetInterface)ProxyGenerator.Create(typeof(targetInterface), new SamepleProxy());
-        // 或
-        // var poxy = (targetInterface)ProxyGenerator.Create(typeof(targetInterface), typeof(SamepleProxy));
-        // 或
-        var poxy = ProxyGenerator.Create<targetInterface, SamepleProxy>();
-        poxy.Write("here is invoked by coreproxy");
+        static void Main(string[] args)
+        {
+            var poxy1 = (targetInterface)ProxyGenerator.Create(typeof(targetInterface), new SampleProxy("coreproxy1"));
+            poxy1.Write("here was invoked"); //---> "here was invoked by coreproxy1"
+
+            var poxy2 = (targetInterface)ProxyGenerator.Create(typeof(targetInterface), typeof(SampleProxy), "coreproxy2");
+            poxy2.Write("here was invoked"); //---> "here was invoked by coreproxy2"
+
+            var poxy3 = ProxyGenerator.Create<targetInterface, SampleProxy>("coreproxy3");
+            poxy3.Write("here was invoked"); //---> "here was invoked by coreproxy3"
+        }
     }
-}
 
 
-public class SamepleProxy : IInterceptor
-{
-    public object Intercept(object target, MethodInfo method, object[] parameters)
+    public class SampleProxy : IInterceptor
     {
-        Console.WriteLine(parameters[0]);
-        return null;
-    }
-}
+        private string proxyName { get; }
 
-public interface targetInterface
-{
-    void Write(string writesome);
-}
+        public SampleProxy(string name)
+        {
+            this.proxyName = name;
+        }
+
+        public object Intercept(MethodInfo method, object[] parameters)
+        {
+            Console.WriteLine(parameters[0] + " by " + proxyName);
+            return null;
+        }
+    }
+
+    public interface targetInterface
+    {
+        void Write(string writesome);
+    }
 ```

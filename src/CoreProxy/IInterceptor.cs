@@ -4,6 +4,6 @@ namespace CoreProxy
 {
     public interface IInterceptor
     {
-        object Intercept(object target, MethodInfo method, object[] parameters);
+        object Intercept(MethodInfo method, object[] parameters);
     }
 }
