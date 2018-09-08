@@ -82,6 +82,16 @@ namespace CoreProxy
             var block = Expression.Block(new[] { variable }, assign1, assign2, variable);
             return Expression.Lambda<Func<TTarget>>(block).Compile()();//建议缓存
         }
+        
+        /// <summary>
+        /// 创建代理实例 TTarget:所要代理的接口类型 TInterceptor:拦截器类型
+        /// </summary>
+        /// <param name="parameters">IInterceptor接口</param>
+        /// <returns>代理实例</returns>
+        public static TTarget Create<TTarget>(IInterceptor iinterceptor)
+        {
+            return DispatchProxyDelegate<TTarget>.GetFunc()(iinterceptor);
+        }
 
         protected override object Invoke(MethodInfo targetMethod, object[] args)
         {
