@@ -7,7 +7,34 @@ namespace CoreProxy
 {
     public class ProxyGenerator : DispatchProxy
     {
-        private IInterceptor interceptor { get; set; }
+        private Func<MethodInfo, object[], object> _invokeFunction;
+
+        /// <summary>
+        /// 创建代理实例
+        /// </summary>
+        /// <typeparam name="TTarget">所要代理的接口类型</typeparam>
+        /// <param name="invokeFunction">拦截函数</param>
+        /// <returns></returns>
+        public static TTarget Create<TTarget>(Func<MethodInfo, object[], object> invokeFunction)
+        {
+            var target = DispatchProxy.Create<TTarget, ProxyGenerator>();
+            (target as ProxyGenerator)._invokeFunction = invokeFunction;
+            return target;
+        }
+
+        /// <summary>
+        /// 创建代理实例
+        /// </summary>
+        /// <param name="targetType">所要代理的接口类型</param>
+        /// <param name="invokeFunction">拦截函数</param>
+        /// <returns></returns>
+        public static object Create(Type targetType, Func<MethodInfo, object[], object> invokeFunction)
+        {
+            var method = typeof(DispatchProxy).GetMethod("Create").MakeGenericMethod(targetType, typeof(ProxyGenerator));
+            var target = method.Invoke(null, null);
+            (target as ProxyGenerator)._invokeFunction = invokeFunction;
+            return target;
+        }
 
         /// <summary>
         /// 创建代理实例
@@ -17,17 +44,7 @@ namespace CoreProxy
         /// <returns>代理实例</returns>
         public static object Create(Type targetType, IInterceptor interceptor)
         {
-            var interceptorType = interceptor.GetType();
-            //声明一个返回值变量
-            var variable = Expression.Variable(targetType);
-            var callexp = Expression.Call(typeof(DispatchProxy), nameof(DispatchProxy.Create), new[] { targetType, typeof(ProxyGenerator) });
-            var interceptorProperty = Expression.Property(Expression.Convert(variable, typeof(ProxyGenerator)), nameof(interceptor));
-            var assign1 = Expression.Assign(variable, callexp);//赋值操作
-            var assign2 = Expression.Assign(interceptorProperty, Expression.Constant(interceptor));//给接口赋值
-
-            //构造代码块 
-            var block = Expression.Block(new[] { variable }, assign1, assign2, variable);
-            return Expression.Lambda<Func<object>>(block).Compile()();//建议缓存
+            return Create(targetType, interceptor.Intercept);
         }
 
         /// <summary>
@@ -39,23 +56,22 @@ namespace CoreProxy
         /// <returns>代理实例</returns>
         public static object Create(Type targetType, Type interceptorType, params object[] parameters)
         {
-            //声明一个返回值变量
-            var variable = Expression.Variable(targetType);
-
-            var callexp = Expression.Call(typeof(DispatchProxy), nameof(DispatchProxy.Create), new[] { targetType, typeof(ProxyGenerator) });
-            var ctorParams = parameters.Select(x => x.GetType()).ToArray();
-            var paramsExp = parameters.Select(x => Expression.Constant(x));
-            var newExp = Expression.New(interceptorType.GetConstructor(ctorParams), paramsExp);
-            var interceptorProperty = Expression.Property(Expression.Convert(variable, typeof(ProxyGenerator)), nameof(interceptor));
-
-            var assign1 = Expression.Assign(variable, callexp);//赋值操作
-            var assign2 = Expression.Assign(interceptorProperty, newExp);//给接口赋值
-
-            //构造代码块 
-            var block = Expression.Block(new[] { variable }, assign1, assign2, variable);
-            return Expression.Lambda<Func<object>>(block).Compile()();//建议缓存
+            var interceptor = Activator.CreateInstance(interceptorType, parameters) as IInterceptor;
+            return Create(targetType, interceptor.Intercept);
         }
 
+        /// <summary>
+        /// 创建代理实例
+        /// </summary>
+        /// <typeparam name="TTarget">所要代理的接口类型</typeparam>
+        /// <param name="interceptorType">拦截器类型</param>
+        /// <param name="parameters">拦截器构造函数参数值</param>
+        /// <returns></returns>
+        public static TTarget Create<TTarget>(Type interceptorType, params object[] parameters)
+        {
+            var interceptor = Activator.CreateInstance(interceptorType, parameters) as IInterceptor;
+            return Create<TTarget>(interceptor.Intercept);
+        }
 
         /// <summary>
         /// 创建代理实例 TTarget:所要代理的接口类型 TInterceptor:拦截器类型
@@ -64,38 +80,23 @@ namespace CoreProxy
         /// <returns>代理实例</returns>
         public static TTarget Create<TTarget, TInterceptor>(params object[] parameters) where TInterceptor : IInterceptor
         {
-            var targetType = typeof(TTarget);
-            var interceptorType = typeof(TInterceptor);
-            //声明一个返回值变量
-            var variable = Expression.Variable(targetType);
-
-            var callexp = Expression.Call(typeof(DispatchProxy), nameof(DispatchProxy.Create), new[] { targetType, typeof(ProxyGenerator) });
-            var ctorParams = parameters.Select(x => x.GetType()).ToArray();
-            var paramsExp = parameters.Select(x => Expression.Constant(x));
-            var newExp = Expression.New(interceptorType.GetConstructor(ctorParams), paramsExp);
-            var interceptorProperty = Expression.Property(Expression.Convert(variable, typeof(ProxyGenerator)), nameof(interceptor));
-
-            var assign1 = Expression.Assign(variable, callexp);//赋值操作
-            var assign2 = Expression.Assign(interceptorProperty, newExp);//给接口赋值
-
-            //构造代码块 
-            var block = Expression.Block(new[] { variable }, assign1, assign2, variable);
-            return Expression.Lambda<Func<TTarget>>(block).Compile()();//建议缓存
+            var interceptor = Activator.CreateInstance(typeof(TInterceptor), parameters) as IInterceptor;
+            return Create<TTarget>(interceptor.Intercept);
         }
-        
+
         /// <summary>
         /// 创建代理实例 TTarget:所要代理的接口类型 TInterceptor:拦截器类型
         /// </summary>
-        /// <param name="parameters">IInterceptor接口</param>
+        /// <param name="interceptor">IInterceptor接口</param>
         /// <returns>代理实例</returns>
-        public static TTarget Create<TTarget>(IInterceptor iinterceptor)
+        public static TTarget Create<TTarget>(IInterceptor interceptor)
         {
-            return DispatchProxyDelegate<TTarget>.GetFunc()(iinterceptor);
+            return Create<TTarget>(interceptor.Intercept);
         }
 
         protected override object Invoke(MethodInfo targetMethod, object[] args)
         {
-            return this.interceptor.Intercept(targetMethod, args);
+            return this._invokeFunction(targetMethod, args);
         }
     }
 }
